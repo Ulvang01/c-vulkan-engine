@@ -13,9 +13,9 @@ target_link_libraries(BoogerAids
 )
 
 target_include_directories(BoogerAids PRIVATE
-    "${CMAKE_SOURCE_DIR}/external/glfw/include"
+    "C:/path/to/glfw/include"
 )
 
 target_link_directories(BoogerAids PRIVATE
-    "${CMAKE_SOURCE_DIR}/external/glfw/build/src"
+    "C:/path/to/glfw/lib-mingw-w64"
 )

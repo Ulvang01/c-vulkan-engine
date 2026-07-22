@@ -1,1 +1,0 @@
-  -LC:/Users/chris/OneDrive/Dokumenter/Koding/c/BoogerAids/external/glfw/build/src  "C:/VulkanSDK/1.4.350.0/Lib/vulkan-1.lib" -lglfw3 -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

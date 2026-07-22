@@ -1,0 +1,3 @@
+C:/Users/chris/OneDrive/Dokumenter/Koding/c/BoogerAids/build/CMakeFiles/BoogerAids.dir
+C:/Users/chris/OneDrive/Dokumenter/Koding/c/BoogerAids/build/CMakeFiles/edit_cache.dir
+C:/Users/chris/OneDrive/Dokumenter/Koding/c/BoogerAids/build/CMakeFiles/rebuild_cache.dir

@@ -20,12 +20,11 @@ int main(void)
         return 1;
 
     VulkanEngine engine = { 0 };
-    if (vulkanEngineInit(&engine) != 0)
+    if (vulkanEngineInit(&engine, window) != 0)
     {
         windowDestroy(window);
         return 1;
     }
-
     vulkanEngineCleanup(&engine);
     windowDestroy(window);
     return 0;

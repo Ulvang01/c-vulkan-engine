@@ -1,7 +1,7 @@
 #include "queue_families.h"
 #include <stdlib.h>
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
     QueueFamilyIndices indices = { 0 };
 
@@ -21,8 +21,19 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
         {
             indices.graphicsFamily.value = i;
             indices.graphicsFamily.hasValue = true;
-            break;
         }
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+        if (presentSupport)
+        {
+            indices.presentFamily.value = i;
+            indices.presentFamily.hasValue = true;
+        }
+
+        // Note: no early break here, unlike the original graphics-only
+        // version, since graphics and present support might land on
+        // different queue families, we need to check all of them
     }
 
     free(queueFamilies);
@@ -31,6 +42,5 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 
 bool queueFamilyIndicesIsComplete(QueueFamilyIndices indices)
 {
-    return indices.graphicsFamily.hasValue;
-    // later: && indices.presentFamily.hasValue
+    return indices.graphicsFamily.hasValue && indices.presentFamily.hasValue;
 }

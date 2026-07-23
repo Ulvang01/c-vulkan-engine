@@ -14,10 +14,14 @@ target_link_libraries(c_vulkan_engine
 )
 
 target_include_directories(c_vulkan_engine PRIVATE
+    "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/external/glfw/include"
 )
 
 target_link_directories(c_vulkan_engine PRIVATE
-    "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/external/glfw/build/src"
+)
+
+target_compile_options(c_vulkan_engine PRIVATE
+    -ffile-prefix-map=${CMAKE_SOURCE_DIR}/=
 )

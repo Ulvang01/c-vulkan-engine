@@ -1,10 +1,9 @@
 #include "log.h"
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-static const char *levelStrings[] = {
-    "DEBUG", "INFO", "WARN", "ERROR"};
+static const char *levelStrings[] = { "DEBUG", "INFO", "WARN", "ERROR" };
 
 // ANSI color codes, one per level
 static const char *levelColors[] = {
@@ -18,10 +17,7 @@ static const char *colorGray = "\x1b[90m"; // bright black, reads as gray
 
 static LogLevel minLevel = LOG_INFO;
 
-void logSetMinLevel(LogLevel level)
-{
-    minLevel = level;
-}
+void logSetMinLevel(LogLevel level) { minLevel = level; }
 
 void logMessage(LogLevel level, const char *file, int line, const char *fmt, ...)
 {
@@ -30,8 +26,7 @@ void logMessage(LogLevel level, const char *file, int line, const char *fmt, ...
 
     FILE *out = (level >= LOG_WARN) ? stderr : stdout;
 
-    fprintf(out, "%s[%s]%s %s%s:%d:%s ",
-            levelColors[level], levelStrings[level], colorReset,
+    fprintf(out, "%s[%s]%s %s%s:%d:%s ", levelColors[level], levelStrings[level], colorReset,
             colorGray, file, line, colorReset);
 
     va_list args;
@@ -39,5 +34,12 @@ void logMessage(LogLevel level, const char *file, int line, const char *fmt, ...
     vfprintf(out, fmt, args);
     va_end(args);
 
-    fprintf(out, "\n");
+    if (level >= LOG_ERROR)
+    {
+        fprintf(out, "\n\n");
+    }
+    else
+    {
+        fprintf(out, "\n");
+    }
 }

@@ -76,8 +76,8 @@ Remove-Item Env:LOG_LEVEL
 - [x] Physical device selection (scored: discrete GPU + VRAM, hard-gated
       on graphics queue family support)
 - [x] Queue family detection (graphics)
-- [ ] Logical device creation
-- [ ] Window surface + presentation queue support
-- [ ] Swapchain
+- [x] Logical device creation
+- [x] Window surface + presentation queue support
+- [x] Swapchain
 - [ ] Render pass + graphics pipeline
 - [ ] First triangle

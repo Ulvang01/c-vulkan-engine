@@ -1,9 +1,9 @@
 #ifndef QUEUE_FAMILIES_H
 #define QUEUE_FAMILIES_H
 
+#include <GLFW/glfw3.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 /**
@@ -21,6 +21,7 @@ typedef struct
 typedef struct
 {
     OptionalUint32 graphicsFamily;
+    OptionalUint32 presentFamily;
 } QueueFamilyIndices;
 
 /**
@@ -29,7 +30,7 @@ typedef struct
  * @param device The physical device to query.
  * @return QueueFamilyIndices with graphicsFamily set if found.
  */
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 /**
  * @brief Checks if the QueueFamilyIndices structure has all required queue families.

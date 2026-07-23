@@ -1,14 +1,16 @@
 #include "window.h"
+#include "log.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 GLFWwindow *windowCreate(int width, int height, const char *title)
 {
     if (!glfwInit())
     {
-        printf("GLFW init failed\n");
+        LOG_ERROR("GLFW init failed");
         return NULL;
     }
-    printf("GLFW initialized OK\n");
+    LOG_INFO("GLFW initialized OK");
 
     // No OpenGL context needed, Vulkan handles its own
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -16,11 +18,11 @@ GLFWwindow *windowCreate(int width, int height, const char *title)
     GLFWwindow *window = glfwCreateWindow(width, height, title, NULL, NULL);
     if (!window)
     {
-        printf("Window creation failed\n");
+        LOG_ERROR("Window creation failed");
         glfwTerminate();
         return NULL;
     }
-    printf("Window created OK\n");
+    LOG_INFO("Window created OK");
     return window;
 }
 

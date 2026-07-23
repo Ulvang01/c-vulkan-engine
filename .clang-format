@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+BreakBeforeBraces: Allman
+Cpp11BracedListStyle: false
+ColumnLimit: 100
+IndentWidth: 4

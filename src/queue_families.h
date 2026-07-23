@@ -31,4 +31,11 @@ typedef struct
  */
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
+/**
+ * @brief Checks if the QueueFamilyIndices structure has all required queue families.
+ * @param indices The QueueFamilyIndices to check.
+ * @return true if all required queue families are present, false otherwise.
+ */
+bool queueFamilyIndicesIsComplete(QueueFamilyIndices indices);
+
 #endif

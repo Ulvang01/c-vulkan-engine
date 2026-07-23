@@ -5,7 +5,8 @@
 #include <GLFW/glfw3.h>
 
 /*
- * @brief Structure representing the Vulkan engine, containing the Vulkan instance and selected physical device.
+ * @brief Structure representing the Vulkan engine, containing the Vulkan instance and selected
+ * physical device.
  */
 typedef struct
 {
@@ -14,7 +15,8 @@ typedef struct
 } VulkanEngine;
 
 /**
- * @brief Initializes the Vulkan engine by creating a Vulkan instance and selecting a physical device.
+ * @brief Initializes the Vulkan engine by creating a Vulkan instance and selecting a physical
+ * device.
  *
  * @param engine Pointer to the VulkanEngine structure to initialize.
  * @return 0 on success, non-zero on failure.

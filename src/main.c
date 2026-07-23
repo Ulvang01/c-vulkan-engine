@@ -1,8 +1,8 @@
-#include "window.h"
-#include "vulkan_engine.h"
-#include "log.h"
-#include <string.h>
+#include "core/log.h"
+#include "core/window.h"
+#include "vulkan/vulkan_engine.h"
 #include <stdlib.h>
+#include <string.h>
 
 const int WINDOW_WIDTH = 640;
 const int WINDOW_HEIGHT = 480;
@@ -19,7 +19,7 @@ int main(void)
     if (!window)
         return 1;
 
-    VulkanEngine engine = {0};
+    VulkanEngine engine = { 0 };
     if (vulkanEngineInit(&engine) != 0)
     {
         windowDestroy(window);

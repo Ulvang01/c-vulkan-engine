@@ -3,7 +3,7 @@
 
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 {
-    QueueFamilyIndices indices = {0};
+    QueueFamilyIndices indices = { 0 };
 
     // Query the number of queue families available on the physical device
     uint32_t queueFamilyCount = 0;
@@ -11,7 +11,8 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 
     // Allocate memory for the queue family properties
     // Get the queue family properties
-    VkQueueFamilyProperties *queueFamilies = malloc(sizeof(VkQueueFamilyProperties) * queueFamilyCount);
+    VkQueueFamilyProperties *queueFamilies =
+        malloc(sizeof(VkQueueFamilyProperties) * queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies);
 
     for (uint32_t i = 0; i < queueFamilyCount; i++)

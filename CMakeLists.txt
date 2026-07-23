@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 find_package(Vulkan REQUIRED)
 
-file(GLOB SOURCES "src/*.c")
+file(GLOB_RECURSE SOURCES "src/*.c")
 add_executable(c_vulkan_engine ${SOURCES})
 
 target_link_libraries(c_vulkan_engine
@@ -18,5 +18,6 @@ target_include_directories(c_vulkan_engine PRIVATE
 )
 
 target_link_directories(c_vulkan_engine PRIVATE
+    "${CMAKE_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/external/glfw/build/src"
 )

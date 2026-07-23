@@ -1,9 +1,12 @@
 #include "window.h"
 #include "vulkan_engine.h"
 
+const int WINDOW_WIDTH = 640;
+const int WINDOW_HEIGHT = 480;
+
 int main(void)
 {
-    GLFWwindow *window = windowCreate(640, 480, "BoogerAids");
+    GLFWwindow *window = windowCreate(WINDOW_WIDTH, WINDOW_HEIGHT, "c_vulkan_engine");
     if (!window)
         return 1;
 

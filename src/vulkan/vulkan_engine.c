@@ -73,11 +73,18 @@ int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window)
         return 1;
     if (createSwapchain(engine, window) != 0)
         return 1;
+    if (createImageViews(engine) != 0)
+        return 1;
     return 0;
 }
 
 void vulkanEngineCleanup(VulkanEngine *engine)
 {
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        vkDestroyImageView(engine->device, engine->swapchain.imageViews[i], NULL);
+    }
+    free(engine->swapchain.imageViews);
     free(engine->swapchain.images);
     vkDestroySwapchainKHR(engine->device, engine->swapchain.swapchain, NULL);
     vkDestroyDevice(engine->device, NULL);

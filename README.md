@@ -79,5 +79,11 @@ Remove-Item Env:LOG_LEVEL
 - [x] Logical device creation
 - [x] Window surface + presentation queue support
 - [x] Swapchain
-- [ ] Render pass + graphics pipeline
+- [x] Image views
+- [ ] Render pass
+- [ ] Shader modules
+- [ ] Graphics pipeline
+- [ ] Framebuffers
+- [ ] Command pool + command buffers
+- [ ] Sync primitives + draw loop
 - [ ] First triangle

@@ -13,6 +13,7 @@ typedef struct
 {
     VkSwapchainKHR swapchain;
     VkImage *images;
+    VkImageView *imageViews;
     uint32_t imageCount;
     VkFormat imageFormat;
     VkExtent2D extent;
@@ -35,5 +36,7 @@ bool isSwapchainAdequate(SwapchainSupportDetails *details);
 int createSwapchain(VulkanEngine *engine, GLFWwindow *window);
 
 void freeSwapchainSupportDetails(SwapchainSupportDetails *details);
+
+int createImageViews(VulkanEngine *engine);
 
 #endif

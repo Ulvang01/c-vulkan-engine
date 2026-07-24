@@ -202,3 +202,36 @@ void freeSwapchainSupportDetails(SwapchainSupportDetails *details)
         details->presentModes = NULL;
     }
 }
+
+int createImageViews(VulkanEngine *engine)
+{
+    engine->swapchain.imageViews = malloc(sizeof(VkImageView) * engine->swapchain.imageCount);
+
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        VkImageViewCreateInfo createInfo = { 0 };
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = engine->swapchain.images[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = engine->swapchain.imageFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(engine->device, &createInfo, NULL,
+                              &engine->swapchain.imageViews[i]) != VK_SUCCESS)
+        {
+            LOG_ERROR("Failed to create image view %u", i);
+            return 1;
+        }
+    }
+
+    LOG_INFO("Created %u image views", engine->swapchain.imageCount);
+    return 0;
+}

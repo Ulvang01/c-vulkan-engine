@@ -2,6 +2,7 @@
 #include "commands.h"
 #include "core/log.h"
 #include "vulkan_engine.h"
+#include <stdlib.h>
 
 int createSyncObjects(VulkanEngine *engine)
 {
@@ -10,18 +11,30 @@ int createSyncObjects(VulkanEngine *engine)
 
     VkFenceCreateInfo fenceInfo = { 0 };
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    // Created already signalled, otherwise the very first frame would wait
-    // forever on work that was never submitted
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     if (vkCreateSemaphore(engine->device, &semaphoreInfo, NULL, &engine->imageAvailableSemaphore) !=
-            VK_SUCCESS ||
-        vkCreateSemaphore(engine->device, &semaphoreInfo, NULL, &engine->renderFinishedSemaphore) !=
             VK_SUCCESS ||
         vkCreateFence(engine->device, &fenceInfo, NULL, &engine->inFlightFence) != VK_SUCCESS)
     {
         LOG_ERROR("Failed to create sync objects");
         return 1;
+    }
+
+    // One render-finished semaphore per swapchain image, not one total.
+    // The fence only guarantees the submit completed, it says nothing about
+    // whether the present that waits on this semaphore has finished, so a
+    // single shared semaphore can be re-signalled while still in use.
+    engine->renderFinishedSemaphores = malloc(sizeof(VkSemaphore) * engine->swapchain.imageCount);
+
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        if (vkCreateSemaphore(engine->device, &semaphoreInfo, NULL,
+                              &engine->renderFinishedSemaphores[i]) != VK_SUCCESS)
+        {
+            LOG_ERROR("Failed to create render finished semaphore %u", i);
+            return 1;
+        }
     }
 
     LOG_INFO("Sync objects created OK");
@@ -48,7 +61,7 @@ int drawFrame(VulkanEngine *engine)
     // writes color. Vertex shading can start before the image is ready.
     VkSemaphore waitSemaphores[] = { engine->imageAvailableSemaphore };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSemaphore signalSemaphores[] = { engine->renderFinishedSemaphore };
+    VkSemaphore signalSemaphores[] = { engine->renderFinishedSemaphores[imageIndex] };
 
     VkSubmitInfo submitInfo = { 0 };
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

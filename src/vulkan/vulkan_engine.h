@@ -25,7 +25,7 @@ typedef struct VulkanEngine
     VkCommandPool commandPool;
     VkCommandBuffer commandBuffer;
     VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
+    VkSemaphore *renderFinishedSemaphores;
     VkFence inFlightFence;
 } VulkanEngine;
 

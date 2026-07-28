@@ -105,7 +105,11 @@ void vulkanEngineCleanup(VulkanEngine *engine)
     // the device itself. The fence is created from the logical device, so destroy it before the
     // device as well. The semaphores are created from the logical device, so destroy them before
     // the device.
-    vkDestroySemaphore(engine->device, engine->renderFinishedSemaphore, NULL);
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        vkDestroySemaphore(engine->device, engine->renderFinishedSemaphores[i], NULL);
+    }
+    free(engine->renderFinishedSemaphores);
     vkDestroySemaphore(engine->device, engine->imageAvailableSemaphore, NULL);
     vkDestroyFence(engine->device, engine->inFlightFence, NULL);
 

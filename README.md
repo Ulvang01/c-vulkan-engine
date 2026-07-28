@@ -18,7 +18,9 @@ a library that hides it.
 ## Building
 
 ```powershell
-.\build.ps1
+.\build.ps1              # build + run (default)
+.\build.ps1 -Mode build  # compile only, don't launch
+.\build.ps1 -Mode run    # launch existing exe, no rebuild
 ```
 
 This wipes and regenerates the `build/` folder from scratch every run

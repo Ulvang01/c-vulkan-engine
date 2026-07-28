@@ -2,7 +2,10 @@
 #include "core/log.h"
 #include "debug.h"
 #include "device.h"
+#include "pipeline.h"
+#include "render_pass.h"
 #include "surface.h"
+#include "swapchain.h"
 #include <stdlib.h>
 
 static const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
@@ -75,20 +78,43 @@ int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window)
         return 1;
     if (createImageViews(engine) != 0)
         return 1;
+    if (createRenderPass(engine) != 0)
+        return 1;
+    if (createGraphicsPipeline(engine) != 0)
+        return 1;
     return 0;
 }
 
 void vulkanEngineCleanup(VulkanEngine *engine)
 {
+    // Destroyed in reverse creation order. Vulkan requires a child object to
+    // be destroyed before its parent, so this mirrors vulkanEngineInit exactly,
+    // read bottom-up to compare the two.
+
+    // Device-level objects, all created from engine->device
+    vkDestroyPipeline(engine->device, engine->graphicsPipeline, NULL);
+    vkDestroyPipelineLayout(engine->device, engine->pipelineLayout, NULL);
+    vkDestroyRenderPass(engine->device, engine->renderPass, NULL);
+
     for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
     {
         vkDestroyImageView(engine->device, engine->swapchain.imageViews[i], NULL);
     }
     free(engine->swapchain.imageViews);
+
+    // The images themselves are owned by the swapchain and must not be
+    // destroyed individually, only our array of handles is ours to free
     free(engine->swapchain.images);
     vkDestroySwapchainKHR(engine->device, engine->swapchain.swapchain, NULL);
+
     vkDestroyDevice(engine->device, NULL);
+
+    // Instance-level objects, order between these two does not matter,
+    // only that both come before the instance itself
     destroyDebugMessenger(engine);
     vkDestroySurfaceKHR(engine->instance, engine->surface, NULL);
+
     vkDestroyInstance(engine->instance, NULL);
+
+    LOG_INFO("Vulkan engine cleaned up OK");
 }

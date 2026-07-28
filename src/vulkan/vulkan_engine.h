@@ -6,8 +6,8 @@
 #include <GLFW/glfw3.h>
 
 /*
- * @brief Structure representing the Vulkan engine, containing the Vulkan instance and selected
- * physical device.
+ * @brief Structure representing the Vulkan engine, containing the Vulkan instance, selected
+ * physical device, and other Vulkan objects.
  */
 typedef struct VulkanEngine
 {
@@ -19,6 +19,9 @@ typedef struct VulkanEngine
     VkQueue presentQueue;
     VkSurfaceKHR surface;
     SwapchainState swapchain;
+    VkRenderPass renderPass;
+    VkPipelineLayout pipelineLayout;
+    VkPipeline graphicsPipeline;
 } VulkanEngine;
 
 /**
@@ -34,7 +37,13 @@ typedef struct VulkanEngine
 int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window);
 
 /**
- * @brief Cleans up the Vulkan engine by destroying the Vulkan instance.
+ * @brief Destroys every Vulkan object created by vulkanEngineInit, in
+ *        reverse creation order.
+ *
+ * @warning Any new object added to vulkanEngineInit needs a matching
+ *          destroy here, placed to preserve reverse ordering. Leaks and
+ *          out-of-order destruction both surface as validation errors
+ *          at teardown.
  *
  * @param engine Pointer to the VulkanEngine structure to clean up.
  */

@@ -25,6 +25,14 @@ int main(void)
         windowDestroy(window);
         return 1;
     }
+
+    // Main loop: runs until the user closes the window.
+    // Nothing is drawn yet, this just keeps the window alive and responsive.
+    while (!glfwWindowShouldClose(window))
+    {
+        glfwPollEvents();
+    }
+
     vulkanEngineCleanup(&engine);
     windowDestroy(window);
     return 0;

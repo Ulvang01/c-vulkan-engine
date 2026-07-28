@@ -82,11 +82,21 @@ int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window)
         return 1;
     if (createGraphicsPipeline(engine) != 0)
         return 1;
+    if (createFramebuffers(engine) != 0)
+        return 1;
     return 0;
 }
 
 void vulkanEngineCleanup(VulkanEngine *engine)
 {
+    // Destroyed in reverse creation order. Vulkan requires a child object to
+    // be destroyed before its parent, so this mirrors vulkanEngineInit exactly,
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        vkDestroyFramebuffer(engine->device, engine->swapchain.framebuffers[i], NULL);
+    }
+    free(engine->swapchain.framebuffers);
+
     // Destroyed in reverse creation order. Vulkan requires a child object to
     // be destroyed before its parent, so this mirrors vulkanEngineInit exactly,
     // read bottom-up to compare the two.

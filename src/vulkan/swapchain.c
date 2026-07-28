@@ -1,4 +1,5 @@
 #include "swapchain.h"
+#include "core/common.h"
 #include "core/log.h"
 #include "queue_families.h"
 #include "surface.h"
@@ -108,6 +109,20 @@ bool isSwapchainAdequate(SwapchainSupportDetails *details)
     return details->formatCount > 0 && details->presentModeCount > 0;
 }
 
+void freeSwapchainSupportDetails(SwapchainSupportDetails *details)
+{
+    if (details->formats)
+    {
+        free(details->formats);
+        details->formats = NULL;
+    }
+    if (details->presentModes)
+    {
+        free(details->presentModes);
+        details->presentModes = NULL;
+    }
+}
+
 int createSwapchain(VulkanEngine *engine, GLFWwindow *window)
 {
     SwapchainSupportDetails details = { 0 };
@@ -189,20 +204,6 @@ int createSwapchain(VulkanEngine *engine, GLFWwindow *window)
     return 0;
 }
 
-void freeSwapchainSupportDetails(SwapchainSupportDetails *details)
-{
-    if (details->formats)
-    {
-        free(details->formats);
-        details->formats = NULL;
-    }
-    if (details->presentModes)
-    {
-        free(details->presentModes);
-        details->presentModes = NULL;
-    }
-}
-
 int createImageViews(VulkanEngine *engine)
 {
     engine->swapchain.imageViews = malloc(sizeof(VkImageView) * engine->swapchain.imageCount);
@@ -233,5 +234,37 @@ int createImageViews(VulkanEngine *engine)
     }
 
     LOG_INFO("Created %u image views", engine->swapchain.imageCount);
+    return 0;
+}
+
+int createFramebuffers(VulkanEngine *engine)
+{
+    engine->swapchain.framebuffers = malloc(sizeof(VkFramebuffer) * engine->swapchain.imageCount);
+
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        // One attachment per framebuffer, matching the single color
+        // attachment declared in the render pass. The order here must match
+        // the render pass attachment order.
+        VkImageView attachments[] = { engine->swapchain.imageViews[i] };
+
+        VkFramebufferCreateInfo framebufferInfo = { 0 };
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = engine->renderPass;
+        framebufferInfo.attachmentCount = ARRAY_COUNT(attachments);
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = engine->swapchain.extent.width;
+        framebufferInfo.height = engine->swapchain.extent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(engine->device, &framebufferInfo, NULL,
+                                &engine->swapchain.framebuffers[i]) != VK_SUCCESS)
+        {
+            LOG_ERROR("Failed to create framebuffer %u", i);
+            return 1;
+        }
+    }
+
+    LOG_INFO("Created %u framebuffers", engine->swapchain.imageCount);
     return 0;
 }

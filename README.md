@@ -86,6 +86,8 @@ Remove-Item Env:LOG_LEVEL
 - [x] Shader modules
 - [x] Graphics pipeline
 - [x] Framebuffers
-- [ ] Command pool + command buffers
-- [ ] Sync primitives + draw loop
-- [ ] First triangle
+- [x] Command pool + command buffers
+- [x] Sync primitives + draw loop
+- [x] First triangle
+
+TODO: Find further steps

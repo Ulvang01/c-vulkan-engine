@@ -1,5 +1,6 @@
 #include "core/log.h"
 #include "core/window.h"
+#include "vulkan/renderer.h"
 #include "vulkan/vulkan_engine.h"
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +32,12 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        drawFrame(&engine);
     }
+
+    // The loop can exit while the GPU is still working. Destroying objects
+    // out from under in-flight work is a validation error.
+    vkDeviceWaitIdle(engine.device);
 
     vulkanEngineCleanup(&engine);
     windowDestroy(window);

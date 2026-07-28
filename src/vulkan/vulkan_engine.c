@@ -1,9 +1,11 @@
 #include "vulkan_engine.h"
+#include "commands.h"
 #include "core/log.h"
 #include "debug.h"
 #include "device.h"
 #include "pipeline.h"
 #include "render_pass.h"
+#include "renderer.h"
 #include "surface.h"
 #include "swapchain.h"
 #include <stdlib.h>
@@ -84,6 +86,12 @@ int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window)
         return 1;
     if (createFramebuffers(engine) != 0)
         return 1;
+    if (createCommandPool(engine) != 0)
+        return 1;
+    if (createCommandBuffer(engine) != 0)
+        return 1;
+    if (createSyncObjects(engine) != 0)
+        return 1;
     return 0;
 }
 
@@ -91,15 +99,29 @@ void vulkanEngineCleanup(VulkanEngine *engine)
 {
     // Destroyed in reverse creation order. Vulkan requires a child object to
     // be destroyed before its parent, so this mirrors vulkanEngineInit exactly,
+    // read bottom-up to compare the two.
+
+    // Sync objects are created from the logical device, so destroy them before
+    // the device itself. The fence is created from the logical device, so destroy it before the
+    // device as well. The semaphores are created from the logical device, so destroy them before
+    // the device.
+    vkDestroySemaphore(engine->device, engine->renderFinishedSemaphore, NULL);
+    vkDestroySemaphore(engine->device, engine->imageAvailableSemaphore, NULL);
+    vkDestroyFence(engine->device, engine->inFlightFence, NULL);
+
+    // Command pool and buffer are created from the logical device, so destroy
+    // them before the device itself. The command buffer is allocated from the
+    // command pool, so destroy it before the pool.
+    vkDestroyCommandPool(engine->device, engine->commandPool, NULL);
+
+    // Framebuffers are created from the swapchain and render pass, so destroy
+    // them before the swapchain and render pass. The image views are also
+    // created from the swapchain, so destroy them before the swapchain as well.
     for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
     {
         vkDestroyFramebuffer(engine->device, engine->swapchain.framebuffers[i], NULL);
     }
     free(engine->swapchain.framebuffers);
-
-    // Destroyed in reverse creation order. Vulkan requires a child object to
-    // be destroyed before its parent, so this mirrors vulkanEngineInit exactly,
-    // read bottom-up to compare the two.
 
     // Device-level objects, all created from engine->device
     vkDestroyPipeline(engine->device, engine->graphicsPipeline, NULL);

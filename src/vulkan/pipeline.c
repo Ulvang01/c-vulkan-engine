@@ -2,6 +2,7 @@
 #include "core/common.h"
 #include "core/log.h"
 #include "shader.h"
+#include "vertex_buffer.h"
 #include "vulkan_engine.h"
 
 int createGraphicsPipeline(VulkanEngine *engine)
@@ -60,10 +61,16 @@ int createGraphicsPipeline(VulkanEngine *engine)
     // TODO: replace with real binding/attribute descriptions once vertex
     // buffers exist.
 
+    VkVertexInputBindingDescription bindingDescription = vertexGetBindingDescription();
+    VkVertexInputAttributeDescription attributeDescriptions[2];
+    uint32_t attributeDescriptionCount = vertexGetAttributeDescriptions(attributeDescriptions);
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = { 0 };
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount = attributeDescriptionCount;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
 
     // --- Input assembly ---
     // How incoming vertices are grouped into primitives. TRIANGLE_LIST means

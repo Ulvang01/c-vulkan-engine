@@ -1,4 +1,5 @@
 #include "vulkan_engine.h"
+#include "buffer.h"
 #include "commands.h"
 #include "core/log.h"
 #include "debug.h"
@@ -8,6 +9,7 @@
 #include "renderer.h"
 #include "surface.h"
 #include "swapchain.h"
+#include "vertex_buffer.h"
 #include <stdlib.h>
 
 static const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
@@ -119,6 +121,10 @@ int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window)
         return 1;
     if (createCommandPool(engine) != 0)
         return 1;
+    if (createVertexBuffer(engine) != 0)
+        return 1;
+    if (createIndexBuffer(engine) != 0)
+        return 1;
     if (createCommandBuffer(engine) != 0)
         return 1;
     if (createSyncObjects(engine) != 0)
@@ -151,6 +157,9 @@ void vulkanEngineCleanup(VulkanEngine *engine)
 
     // Command buffers are owned by the pool and freed with it
     vkDestroyCommandPool(engine->device, engine->commandPool, NULL);
+
+    bufferDestroy(engine->device, &engine->mesh.indices);
+    bufferDestroy(engine->device, &engine->mesh.vertices);
 
     vkDestroyPipeline(engine->device, engine->graphicsPipeline, NULL);
     vkDestroyPipelineLayout(engine->device, engine->pipelineLayout, NULL);

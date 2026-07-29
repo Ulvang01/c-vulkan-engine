@@ -1,6 +1,7 @@
 #include "commands.h"
 #include "core/log.h"
 #include "queue_families.h"
+#include "vertex_buffer.h"
 #include "vulkan_engine.h"
 
 int createCommandPool(VulkanEngine *engine)
@@ -94,7 +95,13 @@ int recordCommandBuffer(VulkanEngine *engine, VkCommandBuffer commandBuffer, uin
     scissor.extent = engine->swapchainState.extent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    // Bind the vertex buffer to binding 0, with no offset.
+    VkBuffer vertexBuffers[] = { engine->mesh.vertices.buffer };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(commandBuffer, engine->mesh.indices.buffer, 0, VK_INDEX_TYPE_UINT16);
+
+    vkCmdDrawIndexed(commandBuffer, engine->mesh.indexCount, 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 

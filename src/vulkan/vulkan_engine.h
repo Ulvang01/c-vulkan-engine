@@ -2,7 +2,9 @@
 #define VULKAN_ENGINE_H
 
 #define GLFW_INCLUDE_VULKAN
+#include "buffer.h"
 #include "swapchain.h"
+#include "vertex_buffer.h"
 #include <GLFW/glfw3.h>
 
 // Two lets the CPU record frame N+1 while the GPU works on frame N.
@@ -28,20 +30,31 @@ typedef struct
  */
 typedef struct VulkanEngine
 {
+    // Context
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
+    VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice;
     VkDevice device;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
-    VkSurfaceKHR surface;
+
+    // Rebuilt on resize
     SwapchainState swapchainState;
+
+    // Rendering
     VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
+
+    // Per-frame
     VkCommandPool commandPool;
     FrameData frames[MAX_FRAMES_IN_FLIGHT];
     uint32_t currentFrame;
+
+    // Geometry
+    Mesh mesh;
+
     bool framebufferResized;
 } VulkanEngine;
 

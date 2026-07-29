@@ -143,8 +143,11 @@ void vulkanEngineCleanup(VulkanEngine *engine)
     // resize path.
     cleanupSwapchain(engine);
 
-    vkDestroySemaphore(engine->device, engine->imageAvailableSemaphore, NULL);
-    vkDestroyFence(engine->device, engine->inFlightFence, NULL);
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(engine->device, engine->frames[i].imageAvailableSemaphore, NULL);
+        vkDestroyFence(engine->device, engine->frames[i].inFlightFence, NULL);
+    }
 
     // Command buffers are owned by the pool and freed with it
     vkDestroyCommandPool(engine->device, engine->commandPool, NULL);

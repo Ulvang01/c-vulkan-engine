@@ -5,6 +5,23 @@
 #include "swapchain.h"
 #include <GLFW/glfw3.h>
 
+// Two lets the CPU record frame N+1 while the GPU works on frame N.
+// Higher values add latency for little gain.
+#define MAX_FRAMES_IN_FLIGHT 2
+
+/**
+ * @brief Everything belonging to one in-flight frame.
+ *
+ * Grouped because all three are always accessed together with the same
+ * index, parallel arrays would let them drift.
+ */
+typedef struct
+{
+    VkCommandBuffer commandBuffer;
+    VkSemaphore imageAvailableSemaphore;
+    VkFence inFlightFence;
+} FrameData;
+
 /*
  * @brief Structure representing the Vulkan engine, containing the Vulkan instance, selected
  * physical device, and other Vulkan objects.
@@ -18,14 +35,13 @@ typedef struct VulkanEngine
     VkQueue graphicsQueue;
     VkQueue presentQueue;
     VkSurfaceKHR surface;
-    SwapchainState swapchain;
+    SwapchainState swapchainState;
     VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
     VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
-    VkSemaphore imageAvailableSemaphore;
-    VkFence inFlightFence;
+    FrameData frames[MAX_FRAMES_IN_FLIGHT];
+    uint32_t currentFrame;
     bool framebufferResized;
 } VulkanEngine;
 

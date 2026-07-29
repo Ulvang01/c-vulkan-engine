@@ -177,7 +177,7 @@ int createSwapchain(VulkanEngine *engine, GLFWwindow *window)
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     VkResult result =
-        vkCreateSwapchainKHR(engine->device, &createInfo, NULL, &engine->swapchain.swapchain);
+        vkCreateSwapchainKHR(engine->device, &createInfo, NULL, &engine->swapchainState.swapchain);
     freeSwapchainSupportDetails(&details);
 
     if (result != VK_SUCCESS)
@@ -191,47 +191,50 @@ int createSwapchain(VulkanEngine *engine, GLFWwindow *window)
     // everywhere else, the driver may have created more images than we
     // requested (imageCount was only a minimum), so re-query the real count
     uint32_t actualImageCount = 0;
-    vkGetSwapchainImagesKHR(engine->device, engine->swapchain.swapchain, &actualImageCount, NULL);
+    vkGetSwapchainImagesKHR(engine->device, engine->swapchainState.swapchain, &actualImageCount,
+                            NULL);
 
-    engine->swapchain.images = malloc(sizeof(VkImage) * actualImageCount);
-    vkGetSwapchainImagesKHR(engine->device, engine->swapchain.swapchain, &actualImageCount,
-                            engine->swapchain.images);
-    engine->swapchain.imageCount = actualImageCount;
+    engine->swapchainState.images = malloc(sizeof(VkImage) * actualImageCount);
+    vkGetSwapchainImagesKHR(engine->device, engine->swapchainState.swapchain, &actualImageCount,
+                            engine->swapchainState.images);
+    engine->swapchainState.imageCount = actualImageCount;
 
-    engine->swapchain.imageFormat = surfaceFormat.format;
-    engine->swapchain.extent = extent;
+    engine->swapchainState.imageFormat = surfaceFormat.format;
+    engine->swapchainState.extent = extent;
 
     return 0;
 }
 
 void cleanupSwapchain(VulkanEngine *engine)
 {
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    for (uint32_t i = 0; i < engine->swapchainState.imageCount; i++)
     {
-        vkDestroyFramebuffer(engine->device, engine->swapchain.framebuffers[i], NULL);
-        vkDestroyImageView(engine->device, engine->swapchain.imageViews[i], NULL);
-        vkDestroySemaphore(engine->device, engine->swapchain.renderFinishedSemaphores[i], NULL);
+        vkDestroyFramebuffer(engine->device, engine->swapchainState.framebuffers[i], NULL);
+        vkDestroyImageView(engine->device, engine->swapchainState.imageViews[i], NULL);
+        vkDestroySemaphore(engine->device, engine->swapchainState.renderFinishedSemaphores[i],
+                           NULL);
     }
 
-    free(engine->swapchain.framebuffers);
-    free(engine->swapchain.imageViews);
-    free(engine->swapchain.renderFinishedSemaphores);
-    free(engine->swapchain.images);
+    free(engine->swapchainState.framebuffers);
+    free(engine->swapchainState.imageViews);
+    free(engine->swapchainState.renderFinishedSemaphores);
+    free(engine->swapchainState.images);
 
-    vkDestroySwapchainKHR(engine->device, engine->swapchain.swapchain, NULL);
+    vkDestroySwapchainKHR(engine->device, engine->swapchainState.swapchain, NULL);
 }
 
 int createImageViews(VulkanEngine *engine)
 {
-    engine->swapchain.imageViews = malloc(sizeof(VkImageView) * engine->swapchain.imageCount);
+    engine->swapchainState.imageViews =
+        malloc(sizeof(VkImageView) * engine->swapchainState.imageCount);
 
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    for (uint32_t i = 0; i < engine->swapchainState.imageCount; i++)
     {
         VkImageViewCreateInfo createInfo = { 0 };
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = engine->swapchain.images[i];
+        createInfo.image = engine->swapchainState.images[i];
         createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = engine->swapchain.imageFormat;
+        createInfo.format = engine->swapchainState.imageFormat;
         createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
         createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -243,68 +246,69 @@ int createImageViews(VulkanEngine *engine)
         createInfo.subresourceRange.layerCount = 1;
 
         if (vkCreateImageView(engine->device, &createInfo, NULL,
-                              &engine->swapchain.imageViews[i]) != VK_SUCCESS)
+                              &engine->swapchainState.imageViews[i]) != VK_SUCCESS)
         {
             LOG_ERROR("Failed to create image view %u", i);
             return 1;
         }
     }
 
-    LOG_DEBUG("Created %u image views", engine->swapchain.imageCount);
+    LOG_DEBUG("Created %u image views", engine->swapchainState.imageCount);
     return 0;
 }
 
 int createFramebuffers(VulkanEngine *engine)
 {
-    engine->swapchain.framebuffers = malloc(sizeof(VkFramebuffer) * engine->swapchain.imageCount);
+    engine->swapchainState.framebuffers =
+        malloc(sizeof(VkFramebuffer) * engine->swapchainState.imageCount);
 
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    for (uint32_t i = 0; i < engine->swapchainState.imageCount; i++)
     {
         // One attachment per framebuffer, matching the single color
         // attachment declared in the render pass. The order here must match
         // the render pass attachment order.
-        VkImageView attachments[] = { engine->swapchain.imageViews[i] };
+        VkImageView attachments[] = { engine->swapchainState.imageViews[i] };
 
         VkFramebufferCreateInfo framebufferInfo = { 0 };
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = engine->renderPass;
         framebufferInfo.attachmentCount = ARRAY_COUNT(attachments);
         framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = engine->swapchain.extent.width;
-        framebufferInfo.height = engine->swapchain.extent.height;
+        framebufferInfo.width = engine->swapchainState.extent.width;
+        framebufferInfo.height = engine->swapchainState.extent.height;
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(engine->device, &framebufferInfo, NULL,
-                                &engine->swapchain.framebuffers[i]) != VK_SUCCESS)
+                                &engine->swapchainState.framebuffers[i]) != VK_SUCCESS)
         {
             LOG_ERROR("Failed to create framebuffer %u", i);
             return 1;
         }
     }
 
-    LOG_DEBUG("Created %u framebuffers", engine->swapchain.imageCount);
+    LOG_DEBUG("Created %u framebuffers", engine->swapchainState.imageCount);
     return 0;
 }
 
 int createRenderFinishedSemaphores(VulkanEngine *engine)
 {
-    engine->swapchain.renderFinishedSemaphores =
-        malloc(sizeof(VkSemaphore) * engine->swapchain.imageCount);
+    engine->swapchainState.renderFinishedSemaphores =
+        malloc(sizeof(VkSemaphore) * engine->swapchainState.imageCount);
 
     VkSemaphoreCreateInfo semaphoreInfo = { 0 };
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    for (uint32_t i = 0; i < engine->swapchainState.imageCount; i++)
     {
         if (vkCreateSemaphore(engine->device, &semaphoreInfo, NULL,
-                              &engine->swapchain.renderFinishedSemaphores[i]) != VK_SUCCESS)
+                              &engine->swapchainState.renderFinishedSemaphores[i]) != VK_SUCCESS)
         {
             LOG_ERROR("Failed to create render finished semaphore %u", i);
             return 1;
         }
     }
 
-    LOG_DEBUG("Created %u render finished semaphores", engine->swapchain.imageCount);
+    LOG_DEBUG("Created %u render finished semaphores", engine->swapchainState.imageCount);
     return 0;
 }
 

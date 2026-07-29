@@ -10,7 +10,7 @@ typedef struct VulkanEngine VulkanEngine;
  *        treated across a frame: cleared on load, stored on finish, and
  *        transitioned into a presentable layout at the end.
  *
- * @param engine Requires engine->device and engine->swapchain.imageFormat.
+ * @param engine Requires engine->device and engine->swapchainState.imageFormat.
  * @return 0 on success, non-zero on failure.
  */
 int createRenderPass(VulkanEngine *engine);

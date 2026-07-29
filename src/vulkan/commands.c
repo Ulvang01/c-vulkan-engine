@@ -32,12 +32,18 @@ int createCommandBuffer(VulkanEngine *engine)
     // PRIMARY can be submitted to a queue directly. SECONDARY can only be
     // called from a primary buffer, used for reusable command sequences.
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-    if (vkAllocateCommandBuffers(engine->device, &allocInfo, &engine->commandBuffer) != VK_SUCCESS)
+    VkCommandBuffer buffers[MAX_FRAMES_IN_FLIGHT];
+    if (vkAllocateCommandBuffers(engine->device, &allocInfo, buffers) != VK_SUCCESS)
     {
         LOG_ERROR("Failed to allocate command buffer");
         return 1;
+    }
+
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        engine->frames[i].commandBuffer = buffers[i];
     }
 
     LOG_INFO("Command buffer allocated OK");
@@ -58,9 +64,9 @@ int recordCommandBuffer(VulkanEngine *engine, VkCommandBuffer commandBuffer, uin
     VkRenderPassBeginInfo renderPassInfo = { 0 };
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = engine->renderPass;
-    renderPassInfo.framebuffer = engine->swapchain.framebuffers[imageIndex];
+    renderPassInfo.framebuffer = engine->swapchainState.framebuffers[imageIndex];
     renderPassInfo.renderArea.offset = (VkOffset2D){ 0, 0 };
-    renderPassInfo.renderArea.extent = engine->swapchain.extent;
+    renderPassInfo.renderArea.extent = engine->swapchainState.extent;
 
     VkClearValue clearColor = { .color.float32 = { 0.0f, 0.0f, 0.0f, 1.0f } };
     renderPassInfo.clearValueCount = 1;
@@ -72,20 +78,20 @@ int recordCommandBuffer(VulkanEngine *engine, VkCommandBuffer commandBuffer, uin
 
     // Viewport and scissor are dynamic state, so they aren't baked into the
     // pipeline and must be set here every time the buffer is recorded.
-    // Reading from swapchain.extent is what lets a resize work without
+    // Reading from swapchainState.extent is what lets a resize work without
     // touching the pipeline.
     VkViewport viewport = { 0 };
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)engine->swapchain.extent.width;
-    viewport.height = (float)engine->swapchain.extent.height;
+    viewport.width = (float)engine->swapchainState.extent.width;
+    viewport.height = (float)engine->swapchainState.extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor = { 0 };
     scissor.offset = (VkOffset2D){ 0, 0 };
-    scissor.extent = engine->swapchain.extent;
+    scissor.extent = engine->swapchainState.extent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);

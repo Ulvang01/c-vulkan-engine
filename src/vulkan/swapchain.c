@@ -185,7 +185,7 @@ int createSwapchain(VulkanEngine *engine, GLFWwindow *window)
         LOG_ERROR("Failed to create swapchain: %d", result);
         return 1;
     }
-    LOG_INFO("Swapchain created OK");
+    LOG_DEBUG("Swapchain created OK");
 
     // Retrieve the actual swapchain images, same two-call pattern as
     // everywhere else, the driver may have created more images than we
@@ -250,7 +250,7 @@ int createImageViews(VulkanEngine *engine)
         }
     }
 
-    LOG_INFO("Created %u image views", engine->swapchain.imageCount);
+    LOG_DEBUG("Created %u image views", engine->swapchain.imageCount);
     return 0;
 }
 
@@ -282,7 +282,7 @@ int createFramebuffers(VulkanEngine *engine)
         }
     }
 
-    LOG_INFO("Created %u framebuffers", engine->swapchain.imageCount);
+    LOG_DEBUG("Created %u framebuffers", engine->swapchain.imageCount);
     return 0;
 }
 

@@ -25,8 +25,20 @@ static const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
 static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
 {
     VulkanEngine *engine = glfwGetWindowUserPointer(window);
-    if (engine)
-        engine->framebufferResized = true;
+    if (!engine)
+        return;
+
+    engine->framebufferResized = true;
+
+    // Windows blocks inside glfwPollEvents for the whole duration of an
+    // edge drag, so the main loop cannot draw. This callback does still
+    // fire during that modal loop, so rendering from here is what keeps
+    // the window live while it is being dragged.
+    if (recreateSwapchain(engine, window) == 0)
+    {
+        engine->framebufferResized = false;
+        drawFrame(engine, window);
+    }
 }
 
 /**

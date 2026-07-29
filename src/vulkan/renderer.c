@@ -21,36 +21,37 @@ int createSyncObjects(VulkanEngine *engine)
         return 1;
     }
 
-    // One render-finished semaphore per swapchain image, not one total.
-    // The fence only guarantees the submit completed, it says nothing about
-    // whether the present that waits on this semaphore has finished, so a
-    // single shared semaphore can be re-signalled while still in use.
-    engine->renderFinishedSemaphores = malloc(sizeof(VkSemaphore) * engine->swapchain.imageCount);
-
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
-    {
-        if (vkCreateSemaphore(engine->device, &semaphoreInfo, NULL,
-                              &engine->renderFinishedSemaphores[i]) != VK_SUCCESS)
-        {
-            LOG_ERROR("Failed to create render finished semaphore %u", i);
-            return 1;
-        }
-    }
-
     LOG_INFO("Sync objects created OK");
     return 0;
 }
 
-int drawFrame(VulkanEngine *engine)
+int drawFrame(VulkanEngine *engine, GLFWwindow *window)
 {
     // Wait for the previous frame to finish so the command buffer is free
     // to re-record. UINT64_MAX means no timeout.
     vkWaitForFences(engine->device, 1, &engine->inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(engine->device, 1, &engine->inFlightFence);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(engine->device, engine->swapchain.swapchain, UINT64_MAX,
-                          engine->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    VkResult acquireResult =
+        vkAcquireNextImageKHR(engine->device, engine->swapchain.swapchain, UINT64_MAX,
+                              engine->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+    if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        // Acquire failed outright, so imageAvailableSemaphore was NOT
+        // signalled. Safe to abandon this frame and retry next iteration.
+        return recreateSwapchain(engine, window);
+    }
+    else if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR)
+    {
+        LOG_ERROR("Failed to acquire swapchain image: %d", acquireResult);
+        return 1;
+    }
+
+    // Reset only once we know we are not returning early. Resetting above
+    // the acquire check and then bailing would leave the fence unsignalled
+    // with nothing queued to signal it, deadlocking the next frame's wait.
+    vkResetFences(engine->device, 1, &engine->inFlightFence);
 
     vkResetCommandBuffer(engine->commandBuffer, 0);
 
@@ -61,7 +62,7 @@ int drawFrame(VulkanEngine *engine)
     // writes color. Vertex shading can start before the image is ready.
     VkSemaphore waitSemaphores[] = { engine->imageAvailableSemaphore };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSemaphore signalSemaphores[] = { engine->renderFinishedSemaphores[imageIndex] };
+    VkSemaphore signalSemaphores[] = { engine->swapchain.renderFinishedSemaphores[imageIndex] };
 
     VkSubmitInfo submitInfo = { 0 };
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -91,7 +92,21 @@ int drawFrame(VulkanEngine *engine)
     presentInfo.pSwapchains = swapchains;
     presentInfo.pImageIndices = &imageIndex;
 
-    vkQueuePresentKHR(engine->presentQueue, &presentInfo);
+    VkResult presentResult = vkQueuePresentKHR(engine->presentQueue, &presentInfo);
+
+    // framebufferResized is checked too because some drivers never report
+    // out-of-date on resize, the GLFW callback catches those.
+    if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR ||
+        engine->framebufferResized)
+    {
+        engine->framebufferResized = false;
+        return recreateSwapchain(engine, window);
+    }
+    else if (presentResult != VK_SUCCESS)
+    {
+        LOG_ERROR("Failed to present swapchain image: %d", presentResult);
+        return 1;
+    }
 
     return 0;
 }

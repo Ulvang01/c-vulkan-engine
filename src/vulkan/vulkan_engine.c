@@ -13,6 +13,23 @@
 static const char *validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
 
 /**
+ * @brief GLFW callback fired when the window's framebuffer is resized.
+ *
+ * Sets a flag rather than recreating anything directly, GLFW may fire this
+ * mid-frame and recreation has to happen at a safe point in drawFrame.
+ *
+ * Some drivers never return VK_ERROR_OUT_OF_DATE_KHR on resize, which is
+ * why this exists alongside the return-code checks rather than instead of
+ * them.
+ */
+static void framebufferResizeCallback(GLFWwindow *window, int width, int height)
+{
+    VulkanEngine *engine = glfwGetWindowUserPointer(window);
+    if (engine)
+        engine->framebufferResized = true;
+}
+
+/**
  * @brief Creates a Vulkan instance and stores it in the VulkanEngine structure.
  *
  * The instance is Vulkan's entry point, everything else (physical devices,
@@ -86,62 +103,43 @@ int vulkanEngineInit(VulkanEngine *engine, GLFWwindow *window)
         return 1;
     if (createFramebuffers(engine) != 0)
         return 1;
+    if (createRenderFinishedSemaphores(engine) != 0)
+        return 1;
     if (createCommandPool(engine) != 0)
         return 1;
     if (createCommandBuffer(engine) != 0)
         return 1;
     if (createSyncObjects(engine) != 0)
         return 1;
+
+    // The callback needs to reach the engine, GLFW's only mechanism for
+    // that is the window user pointer
+    glfwSetWindowUserPointer(window, engine);
+    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
     return 0;
 }
 
 void vulkanEngineCleanup(VulkanEngine *engine)
 {
     // Destroyed in reverse creation order. Vulkan requires a child object to
-    // be destroyed before its parent, so this mirrors vulkanEngineInit exactly,
-    // read bottom-up to compare the two.
+    // be destroyed before its parent, so this mirrors vulkanEngineInit, read
+    // bottom-up to compare the two.
 
-    // Sync objects are created from the logical device, so destroy them before
-    // the device itself. The fence is created from the logical device, so destroy it before the
-    // device as well. The semaphores are created from the logical device, so destroy them before
-    // the device.
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
-    {
-        vkDestroySemaphore(engine->device, engine->renderFinishedSemaphores[i], NULL);
-    }
-    free(engine->renderFinishedSemaphores);
+    // Everything sized by or derived from the swapchain: framebuffers, image
+    // views, per-image semaphores, and the swapchain itself. Shared with the
+    // resize path.
+    cleanupSwapchain(engine);
+
     vkDestroySemaphore(engine->device, engine->imageAvailableSemaphore, NULL);
     vkDestroyFence(engine->device, engine->inFlightFence, NULL);
 
-    // Command pool and buffer are created from the logical device, so destroy
-    // them before the device itself. The command buffer is allocated from the
-    // command pool, so destroy it before the pool.
+    // Command buffers are owned by the pool and freed with it
     vkDestroyCommandPool(engine->device, engine->commandPool, NULL);
 
-    // Framebuffers are created from the swapchain and render pass, so destroy
-    // them before the swapchain and render pass. The image views are also
-    // created from the swapchain, so destroy them before the swapchain as well.
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
-    {
-        vkDestroyFramebuffer(engine->device, engine->swapchain.framebuffers[i], NULL);
-    }
-    free(engine->swapchain.framebuffers);
-
-    // Device-level objects, all created from engine->device
     vkDestroyPipeline(engine->device, engine->graphicsPipeline, NULL);
     vkDestroyPipelineLayout(engine->device, engine->pipelineLayout, NULL);
     vkDestroyRenderPass(engine->device, engine->renderPass, NULL);
-
-    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
-    {
-        vkDestroyImageView(engine->device, engine->swapchain.imageViews[i], NULL);
-    }
-    free(engine->swapchain.imageViews);
-
-    // The images themselves are owned by the swapchain and must not be
-    // destroyed individually, only our array of handles is ours to free
-    free(engine->swapchain.images);
-    vkDestroySwapchainKHR(engine->device, engine->swapchain.swapchain, NULL);
 
     vkDestroyDevice(engine->device, NULL);
 

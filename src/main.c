@@ -32,7 +32,7 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        drawFrame(&engine);
+        drawFrame(&engine, window);
     }
 
     // The loop can exit while the GPU is still working. Destroying objects

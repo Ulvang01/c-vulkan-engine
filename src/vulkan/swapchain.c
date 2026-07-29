@@ -204,6 +204,23 @@ int createSwapchain(VulkanEngine *engine, GLFWwindow *window)
     return 0;
 }
 
+void cleanupSwapchain(VulkanEngine *engine)
+{
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        vkDestroyFramebuffer(engine->device, engine->swapchain.framebuffers[i], NULL);
+        vkDestroyImageView(engine->device, engine->swapchain.imageViews[i], NULL);
+        vkDestroySemaphore(engine->device, engine->swapchain.renderFinishedSemaphores[i], NULL);
+    }
+
+    free(engine->swapchain.framebuffers);
+    free(engine->swapchain.imageViews);
+    free(engine->swapchain.renderFinishedSemaphores);
+    free(engine->swapchain.images);
+
+    vkDestroySwapchainKHR(engine->device, engine->swapchain.swapchain, NULL);
+}
+
 int createImageViews(VulkanEngine *engine)
 {
     engine->swapchain.imageViews = malloc(sizeof(VkImageView) * engine->swapchain.imageCount);
@@ -266,5 +283,52 @@ int createFramebuffers(VulkanEngine *engine)
     }
 
     LOG_INFO("Created %u framebuffers", engine->swapchain.imageCount);
+    return 0;
+}
+
+int createRenderFinishedSemaphores(VulkanEngine *engine)
+{
+    engine->swapchain.renderFinishedSemaphores =
+        malloc(sizeof(VkSemaphore) * engine->swapchain.imageCount);
+
+    VkSemaphoreCreateInfo semaphoreInfo = { 0 };
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    for (uint32_t i = 0; i < engine->swapchain.imageCount; i++)
+    {
+        if (vkCreateSemaphore(engine->device, &semaphoreInfo, NULL,
+                              &engine->swapchain.renderFinishedSemaphores[i]) != VK_SUCCESS)
+        {
+            LOG_ERROR("Failed to create render finished semaphore %u", i);
+            return 1;
+        }
+    }
+
+    LOG_DEBUG("Created %u render finished semaphores", engine->swapchain.imageCount);
+    return 0;
+}
+
+int recreateSwapchain(VulkanEngine *engine, GLFWwindow *window)
+{
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0)
+    {
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(engine->device);
+
+    cleanupSwapchain(engine);
+
+    if (createSwapchain(engine, window) != 0)
+        return 1;
+    if (createImageViews(engine) != 0)
+        return 1;
+    if (createFramebuffers(engine) != 0)
+        return 1;
+    if (createRenderFinishedSemaphores(engine) != 0)
+        return 1;
     return 0;
 }

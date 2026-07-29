@@ -26,6 +26,7 @@ typedef struct
     VkImage *images;
     VkImageView *imageViews;
     VkFramebuffer *framebuffers;
+    VkSemaphore *renderFinishedSemaphores;
     uint32_t imageCount;
     VkFormat imageFormat;
     VkExtent2D extent;
@@ -105,6 +106,27 @@ void freeSwapchainSupportDetails(SwapchainSupportDetails *details);
 int createSwapchain(VulkanEngine *engine, GLFWwindow *window);
 
 /**
+ * @brief Destroys the swapchain and all derived objects.
+ *
+ * This is called when the window is resized, and also during engine
+ * teardown. The swapchain itself is destroyed by vkDestroySwapchainKHR,
+ * but the image views, framebuffers, and render-finished semaphores are
+ * ours to destroy.
+ *
+ * @param engine Requires engine->swapchain to be populated.
+ */
+void cleanupSwapchain(VulkanEngine *engine);
+
+/**
+ * @brief Destroys the old swapchain and creates a new one, along with all
+ *        derived objects.
+ * @param engine Requires engine->swapchain to be populated.
+ * @param window Used to query the current framebuffer size.
+ * @return 0 on success, non-zero on failure.
+ */
+int recreateSwapchain(VulkanEngine *engine, GLFWwindow *window);
+
+/**
  * @brief Creates one image view per swapchain image.
  *
  * Swapchain images can't be used as render targets directly, a view is what
@@ -125,5 +147,16 @@ int createImageViews(VulkanEngine *engine);
  * @return 0 on success, non-zero on failure.
  */
 int createFramebuffers(VulkanEngine *engine);
+
+/**
+ * @brief Creates one render-finished semaphore per swapchain image.
+ *
+ * Each semaphore is signaled when the corresponding image's rendering is
+ * complete, and waited on by the present queue before presenting that image.
+ *
+ * @param engine Requires engine->swapchain to be populated by createSwapchain.
+ * @return 0 on success, non-zero on failure.
+ */
+int createRenderFinishedSemaphores(VulkanEngine *engine);
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 typedef struct VulkanEngine VulkanEngine;
@@ -21,6 +22,6 @@ int createSyncObjects(VulkanEngine *engine);
  * @param engine A fully initialized engine.
  * @return 0 on success, non-zero on failure.
  */
-int drawFrame(VulkanEngine *engine);
+int drawFrame(VulkanEngine *engine, GLFWwindow *window);
 
 #endif
